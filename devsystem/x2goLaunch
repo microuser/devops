@@ -1,0 +1,16 @@
+#!/bin/bash
+
+mychromium () { /usr/bin/chromium-browser --user-data-dir=/tmp/chrome2 ; }
+
+if [ ":50" == "$DISPLAY" ] 
+then
+    xrandr -s 1920x1080
+    #trap "" 1 0
+    rsync -av --delete --exclude=/Singleton* --exclude=/Session* ~/.config/chromium/ /tmp/chrome2/
+    mychromium
+else
+    /usr/bin/chromium-browser
+fi
+
+
+
