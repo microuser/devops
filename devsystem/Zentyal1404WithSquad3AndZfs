@@ -1,0 +1,114 @@
+Zentyal
+
+Install
+All but group ware
+
+Update
+
+DNS, Forewarders. Enable Transparent DNS
+
+Module Status:
+Enable DHCP
+
+Software Management Settings: Enable Automatic Updates
+
+Create Certification Authority
+VPN Server: Add
+
+DHCP: Interfaces: Configuration (For all
+Add Range, name it 192.168.x.100 to 192.168.x.199
+
+
+Add Service: ProxyPort Single TCP on 3128 to 3128
+
+Click Firefall. Configure Rules for internal to zentyal. Add New. Accept ProxyPort
+From Source: 192.168.0.0/16
+
+
+sudo apt-get install squid
+sudo nano /etc/squid3/squid.conf
+
+search visible_hostname
+make line visible_hostname centricProxy
+
+Search TAG: cache_mgr
+add line cache_mgr nohelp@example.com
+
+Search http_port 3128 
+Change the line to listen on two ports,
+ http_port 3128 8888
+
+
+Search acl section: acl SSL_ports
+
+add line
+acl networkTwo src 192.168.2.0/24
+acl networkThree src 192.168.3.0/24
+acl networkFour src 192.168.4.0/24
+
+
+search http_access allow localhost
+add lines:
+http_access allow networkTwo
+http_access allow networkThree
+http_access allow networkFour
+
+
+or uncomment acl localnet and allow http_access allow localnet
+
+Search for #cache_dir ufs
+Add Line:
+ in format HardriveMB Depth ???
+cache_dir ufs /var/spool/squid3 1024
+	#This sets cache expiration time to be 1 week. 
+refresh_pattern -i \.(gif|png|jpg|jpeg|ico)$ 21600	90%	43200
+
+
+
+Saved and Exit
+For transparent Proxy
+# redirect all HTTP(tcp:80) traffic coming in through eth0 to 3126
+iptables -t nat -A PREROUTING -i eth0 -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 3126
+
+
+is it loading on boot?
+initctl show-config squid3
+
+
+
+
+--------------
+
+
+sudo apt-get install software-properties-common
+
+sudo apt-add-repository ppa:zfs-native/stable
+sudo apt-get update
+sudo apt-get upgrade
+
+sudo apt-get remove spl-dkms zfs-dkms ubuntu-zfs
+sudo apt-get install linux-headers-generic build-essential
+sudo apt-get install linux-headers-$(uname -r)
+sudo apt-get install spl-dkms
+sudo apt-get install zfs-dkms
+sudo apt-get install ubuntu-zfs
+dpkg-reconfigure spl-dkms
+dpkg-reconfigure zfs-dkms
+
+
+sudo modprobe zfs
+
+sudo nano /usr/share/perl5/EBox/Samba/Model/SambaShares.pm
+
+	or change  at tned
+
+.... ($type =~ m/glusterfs/) to have ($type =~ m/glusterfs/) or ($type =~ m/zfs/)) {
+            $self->_checkSystemShareMountOptions($normalized);
+
+
+
+
+
+
+
+

@@ -1,0 +1,57 @@
+sudo apt-get install btrfs-tools
+
+sudo parted -l | grep 1500
+
+mkfs.btrfs -f -m raid1 -d raid1 -L Centric1800 /dev/sde /dev/sdf
+mkfs.btrfs -f -m raid10 -d raid10 -L Centric4000 /dev/sdb /dev/sdc /dev/sdd /dev/sdg
+
+
+#Fstab entry
+/dev/sdb     /mnt    btrfs    device=/dev/sdb,device=/dev/sdc,device=/dev/sdd,device=/dev/sde    0 0
+
+
+
+
+# Scan all devices
+btrfs device scan
+
+# Scan a single device
+btrfs device scan /dev/sdb
+
+
+
+#Raid and Disk uage
+btrfs fi df /mount
+
+
+#raid level
+btrfs fi df /mountpoint
+
+
+#good resource
+https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_I_create_a_RAID1_mirror_in_Btrfs.3F
+
+#Make a label
+btrfs filesystem label <dev> [newlabel]
+
+
+#defrag
+sudo btrfs filesystem defragment -r /path/
+
+
+#Rebalance 100 percent
+btrfs balance start -dusage=100 /mnt/btrfs
+btrfs balance start -dusage=50 /mnt/btrfs
+btrfs balance start -dusage=0 /mnt/btrfs
+
+
+#Convert type and rebalance
+$ btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt
+$ btrfs fi df /mnt
+
+
+
+Before replacing the device you will need to mount the array, if you have a missing device then you will need to use the following command:
+  sudo mount -o degraded /dev/sda1 /mnt
+We will now replace the absent device 6 with the new drive /dev/sdf1 on our file system currently mounted on /mnt:
+  sudo btrfs replace start 6 /dev/sdf1 /mnt

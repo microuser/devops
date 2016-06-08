@@ -3,6 +3,8 @@
 #Created 2016-05-27
 #ChangeLog
 
+#Version 	2016-06-05	   0.9.4 Added ScudCloud
+#Version	2016-06-05	   0.9.3 Added Docker
 #Version    2016-06-04     0.9.2 Added apt-get upgrade
 #Version    2016-06-04     0.9.2 Added openssh-server
 #Version    2016-06-04     0.9.1 Added x20go
@@ -19,6 +21,8 @@ vagrantFile="vagrant_1.8.1_x86_64.deb"
 netBeansUrl="http://download.netbeans.org/netbeans/8.1/final/bundles/netbeans-8.1-php-linux-x64.sh"
 netBeansFile="netbeans-8.1-php-linux-x64.sh"
 netBeansInstallDir="/usr/local/netbeans-8.1/bin/netbeans"
+sublimeUrl="https://download.sublimetext.com/sublime-text_build-3114_amd64.deb"
+sublimeFile="sublime-text_build-3114_amd64.deb"
 
 
 
@@ -196,6 +200,32 @@ then
 fi
 
 aptInstall x2goclient
+
+aptInstall docker.io
+
+if ! isInstalled scudcloud
+then
+	sudo apt-add-repository -y ppa:rael-gc/scudcloud
+	echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
+	sudo apt-get update
+fi
+aptInstall scudcloud hunspell-en-us libqtwebkit-qupzillaplugins python3-hunspell
+
+#if ! isInstalled google-talkplugin
+#then
+#	cd /tmp ; wget https://dl.google.com/linux/direct/google-talkplugin_current_amd64.deb
+#	sudo dpkg -i google-talkplugin_current_amd64.deb
+	#to remove
+	#sudo dpkg -r  google-talkplugin
+#fi
+
+
+if ! isInstalled sublime-text
+then
+	cd /tmp ; wget "$sublimeUrl" && sudo dpkg -i "$sublimeFile"
+fi
+
+
 
 
 
