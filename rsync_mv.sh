@@ -19,9 +19,11 @@ then
   ## Iterate so rsync_mv behaves with mutiple sources
   while [ ! -z "$2" ]
   do
-  ##Remove Empty Directories, which should be empty after rsync
-    find "$1" -type d -empty -delete
-
+  ##Remove Empty Directories, which should be empty after rsync, only if they are a directory
+    if [ -d $1 ]
+    then
+      find "$1" -type d -empty -delete
+    fi
   ##Shift the parameters left, so "$3" becomes "$2" and "$2" becomes "$1"
   shift
   done
