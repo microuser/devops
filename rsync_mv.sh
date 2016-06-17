@@ -1,6 +1,7 @@
 #!/bin/bash
 
 if [ -z "$RSYNC_MV_OPTS" ]
+then
   RSYNC_MV_OPTS="-a -P"
   
   ##For some version for RSYNC
