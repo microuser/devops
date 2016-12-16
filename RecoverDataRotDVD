@@ -1,0 +1,62 @@
+#!/bin/sh
+
+#which safecopy || sudo apt-get install safecopy testdisk dialog zenity tree
+
+#safecopy /dev/cdrom ~/safecopy.iso -M CoRrUpTeD --stage1 || safecopy /dev/cdrom ~/safecopy.iso -M CoRrUpTeD --stage3 -Z
+
+
+
+#sudo mkdir -p /media/user/cdrom
+#sudo mount -o loop ~/safecopy.iso /media/user/cdrom
+
+#grep -R /media/user/cdrom "CoRrUpTeD" 
+
+
+if df | grep /dev/sr0 ; then sudo umount /dev/sr0 ; fi ;
+if df | grep /media/user/cdrom ; then sudo umount /media/user/cdrom ; fi ;
+sleep 1
+
+
+#https://sumofungus.wordpress.com/2010/01/19/making-backup-copies-of-damaged-dvds-using-ddrescue/
+
+if [ -r ddrescue.log ] ; then rm ddrescue.log ; fi
+if [ -r ddrescue.iso ] ; then rm ddrescue.iso ; fi
+
+ddrescue -b 2048 -n -v /dev/sr0 ~/ddrescue.iso ddrescue.log 
+
+if [ "`cat ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
+then
+	echo Second Pass -----------------------------------------------------------------------
+	cat ddrescue.log
+	ddrescue -C -b 2048 -d -r 3 -v /dev/sr0 ~/ddrescue.iso ddrescue.log ;
+fi
+
+if [ "`cat ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
+then
+	echo Third Pass -----------------------------------------------------------------------
+	cat ddrescue.log
+	ddrescue -C -b 2048 -d -r 6 -R -v /dev/sr0 ~/ddrescue.iso 	ddrescue.log
+fi
+
+if [ "`cat ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
+then
+	echo Fourth Pass -----------------------------------------------------------------------
+	cat ddrescue.log
+	ddrescue -C -b 2048 -d -r 6 -vv /dev/sr0 ~/ddrescue.iso 	ddrescue.log
+fi
+
+sudo eject /dev/sr0
+fsck ~/ddrescue.iso
+sudo mount -o loop ~/ddrescue.iso /media/user/cdrom
+
+tree -L 2 /media/user/cdrom
+
+#http://html5.litten.com/how-to-fix-recover-data-from-a-scratched-or-damaged-cd-or-dvd/
+
+destinationFolder=`zenity --entry --title="Filename Destination" --text="FilenameDestination"`;
+
+rsync -a -v -P /media/user/cdrom/ ~/$destinationFolder
+
+sudo umount /media/user/cdrom
+
+
