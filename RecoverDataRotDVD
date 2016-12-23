@@ -1,62 +1,100 @@
-#!/bin/sh
+#!/bin/bash
+destinationBaseFallback=/media/Rack/Rack-Unsorted/CDs
 
-#which safecopy || sudo apt-get install safecopy testdisk dialog zenity tree
+username=$SUDO_USER
+if [[ -z $username ]]
+then
+	username=`whoami`
+fi
 
-#safecopy /dev/cdrom ~/safecopy.iso -M CoRrUpTeD --stage1 || safecopy /dev/cdrom ~/safecopy.iso -M CoRrUpTeD --stage3 -Z
+if [[ "$1" == --tempDir ]] && [[ "$2" == *?* ]]
+then
+	tempDir=$2
+	shift
+	shift
+else
+	tempDir=~/
+fi
 
 
+if [[ "$1" == *--?esume* ]]
+then
+	resume="yes"
+	shift
+else
+	resume="no"
+fi
 
-#sudo mkdir -p /media/user/cdrom
-#sudo mount -o loop ~/safecopy.iso /media/user/cdrom
+echo tempDir=$tempDir
 
-#grep -R /media/user/cdrom "CoRrUpTeD" 
+if [[ "$#" -gt "0" ]] ; 
+then 
+destinationBase=$@
+echo destinationBase=$destinationBase
+else
+destinationBase=$destinationBaseFallback
+echo destinationBase= 
+fi
 
+which tree 2>/dev/null || sudo apt-get install tree -y
+which ddrescue 2>/dev/null || sudo apt-get install gddrescue -y
 
 if df | grep /dev/sr0 ; then sudo umount /dev/sr0 ; fi ;
-if df | grep /media/user/cdrom ; then sudo umount /media/user/cdrom ; fi ;
-sleep 1
-
+if df | grep /media/$username/cdrom ; then sudo umount /media/$username/cdrom ; fi ;
 
 #https://sumofungus.wordpress.com/2010/01/19/making-backup-copies-of-damaged-dvds-using-ddrescue/
 
-if [ -r ddrescue.log ] ; then rm ddrescue.log ; fi
-if [ -r ddrescue.iso ] ; then rm ddrescue.iso ; fi
+if [[ $resume == "no" ]]
+then
+	if [ -r $tempDir/ddrescue.log ] ; then rm $tempDir/ddrescue.log ; fi
+	if [ -r $tempDir/ddrescue.iso ] ; then rm $tempDir/ddrescue.iso ; fi
 
-ddrescue -b 2048 -n -v /dev/sr0 ~/ddrescue.iso ddrescue.log 
 
-if [ "`cat ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
+	ddrescue -b 2048 -n -v /dev/sr0 $tempDir/ddrescue.iso $tempDir/ddrescue.log || exit 1
+fi
+
+if [ "`cat $tempDir/ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
 then
 	echo Second Pass -----------------------------------------------------------------------
-	cat ddrescue.log
-	ddrescue -C -b 2048 -d -r 3 -v /dev/sr0 ~/ddrescue.iso ddrescue.log ;
+	cat $tempDir/ddrescue.log
+	ddrescue -C -b 2048 -d -r 3 -v /dev/sr0 $tempDir/ddrescue.iso $tempDir/ddrescue.log ;
 fi
 
-if [ "`cat ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
+if [ "`cat $tempDir/ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
 then
 	echo Third Pass -----------------------------------------------------------------------
-	cat ddrescue.log
-	ddrescue -C -b 2048 -d -r 6 -R -v /dev/sr0 ~/ddrescue.iso 	ddrescue.log
+	cat $tempDir/ddrescue.log
+	ddrescue -C -b 2048 -d -r 6 -R -v /dev/sr0 $tempDir/ddrescue.iso $tempDir/ddrescue.log
 fi
 
-if [ "`cat ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
+if [ "`cat $tempDir/ddrescue.log | grep -v '#' | wc -l`" -gt "2" ]
 then
 	echo Fourth Pass -----------------------------------------------------------------------
-	cat ddrescue.log
-	ddrescue -C -b 2048 -d -r 6 -vv /dev/sr0 ~/ddrescue.iso 	ddrescue.log
+	cat $tempDir/ddrescue.log
+	ddrescue -C -b 2048 -d -r 6 -vv /dev/sr0 $tempDir/ddrescue.iso 	$tempDir/ddrescue.log
 fi
 
-sudo eject /dev/sr0
-fsck ~/ddrescue.iso
-sudo mount -o loop ~/ddrescue.iso /media/user/cdrom
 
-tree -L 2 /media/user/cdrom
+if [ -r $tempDir/ddrescue.iso ] ; then fsck $tempDir/ddrescue.iso ; fi
+
+if [ ! -r /media/$username/cdrom ] ; then mkdir -p /media/$username/cdrom ; fi
+sudo mount -o loop $tempDir/ddrescue.iso /media/$username/cdrom
+
+tree -L 2 /media/$username/cdrom
 
 #http://html5.litten.com/how-to-fix-recover-data-from-a-scratched-or-damaged-cd-or-dvd/
 
 destinationFolder=`zenity --entry --title="Filename Destination" --text="FilenameDestination"`;
 
-rsync -a -v -P /media/user/cdrom/ ~/$destinationFolder
 
-sudo umount /media/user/cdrom
+params="-v -r -t -P -z "
+mkdir -p `dirname $destinaionBase/$destinationFolder`
+if [[ "$destinationFolder"  =~ ".iso" ]]
+then 
+	rsync $params $tempDir/ddrescue.iso /$destinationBase/$destinationFolder
+else 
+	rsync $params /media/$username/cdrom/ $destinationBase/$destinationFolder
+fi
 
-
+sudo umount /media/$username/cdrom
+sudo eject /dev/sr0
