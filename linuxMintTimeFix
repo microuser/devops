@@ -2,3 +2,12 @@
 
 echo Fixing Linux Mint Time to work with windows 10 time
 sudo timedatectl set-local-rtc 1
+
+#
+#
+#echo Fixing Linux Mint Time use UTC time
+#sudo timedatectl set-local-rtc 0
+
+
+#PS, if you have an older version of LinuxMint, use..
+# sudo bash -c "echo UTC=no >> /etc/default/rcS"
